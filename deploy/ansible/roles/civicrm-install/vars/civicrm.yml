@@ -1,0 +1,13 @@
+# civicrm installation
+civicrm_db_user: civicrm
+civicrm_db_password: civicrm
+civicrm_db_name: civicrm
+civicrm_root_path: /var/lib/civicrm/webapp/
+
+# civicrm default configuration
+sso_enabled: "false"
+connec_enabled: "false"
+maestrano_environment: "production"
+server_hostname: "server_hostname"
+api_key: "api_key"
+api_secret: "api_secret"
