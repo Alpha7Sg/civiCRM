@@ -95,10 +95,21 @@
   tags:
     - configuration
 
-- name: Civicrm | Install drupal
+- name: Civicrm | Install drupal core
   shell: "drush -y site-install standard --account-name=\"alpha7\" --account-pass=\"alpha72015!@\" --db-url=\"mysql://{{civicrm_db_user}}:{{civicrm_db_password}}@localhost/{{civicrm_db_name}}\""    
   args:
     chdir: "{{ civicrm_root_path }}"
+
+- name: Civicrm | Install Drush Command for civiCRM
+  shell: "cp sites/all/modules/civicrm/drupal/drush/civicrm.drush.inc $HOME/.drush/civicrm.drush.inc"
+  args:
+    chdir: "{{ civicrm_root_path }}"
+
+- name: Civicrm | Enable CiviCRM Module
+  shell: "drush civicrm-install"
+  args:
+    chdir: "{{ civicrm_root_path }}"       
+    
 
 - name: Civicrm | Configuration file alpha7.json
   template: 
