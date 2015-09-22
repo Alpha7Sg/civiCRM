@@ -86,14 +86,19 @@
     name: apache2 
     state: restarted
 
-- name: Civicrm | Configuration file civicrm-settings.php
+- name: Civicrm | Configuration file drupal-settings.php
   template: 
-    src: civicrm-settings.php
+    src: drupal-settings.php
     dest: "{{ civicrm_root_path }}/sites/default/settings.php"
     owner: www-data
     mode: 755
   tags:
     - configuration
+
+- name: Civicrm | Install drupal
+  shell: "drush -y site-install standard --account-name=\"alpha7\" --account-pass=\"alpha72015!@\" --db-url=\"mysql://{{civicrm_db_user}}:{{civicrm_db_password}}@localhost/{{civicrm_db_name}}\""    
+  args:
+    chdir: "{{ civicrm_root_path }}"
 
 - name: Civicrm | Configuration file alpha7.json
   template: 
@@ -105,13 +110,6 @@
   tags:
     - configuration
 
-- name: Civicrm | Setup Civicrm database
-  shell: "mysql {{ civicrm_db_name }} -u{{ civicrm_db_user }} -p{{ civicrm_db_password }} < {{ item }}"
-  with_items:
-    - maestrano/app/db/0_base_schema.sql
-    - maestrano/app/db/1_add_mno_uid_field.sql
-  args:
-    chdir: "{{ civicrm_root_path }}"
 
 - name: Civicrm | Set file permissions
   file:

@@ -3,6 +3,9 @@ MAINTAINER Maestrano <it@maestrano.com>
 
 RUN apt-get -y update && apt-get -y upgrade 
 
+#install drush command tool for drupal
+RUN apt-get -y install drush
+
 # Add ansible configuration
 ADD ansible /etc/ansible
 WORKDIR /etc/ansible
