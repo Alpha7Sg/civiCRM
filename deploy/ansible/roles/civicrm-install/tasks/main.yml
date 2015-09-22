@@ -101,12 +101,12 @@
     chdir: "{{ civicrm_root_path }}"
 
 - name: Civicrm | Install Drush Command for civiCRM
-  shell: "cp sites/all/modules/civicrm/drupal/drush/civicrm.drush.inc $HOME/.drush/civicrm.drush.inc"
+  shell: "cp sites/all/modules/civicrm/drupal/drush/civicrm.drush.inc $HOME/.drush/civicrm.drush.inc && drush cc drush"
   args:
     chdir: "{{ civicrm_root_path }}"
 
 - name: Civicrm | Enable CiviCRM Module
-  shell: "drush civicrm-install"
+  shell: "drush civicrm-install && rm $HOME/.drush/civicrm.drush.inc && drush en civi_bartik && drush vset admin_default civi_bartik"
   args:
     chdir: "{{ civicrm_root_path }}"       
     
