@@ -1,0 +1,510 @@
+<?php
+
+/**
+ * This hook is called before a db write on some core objects. This hook does
+ * not allow the abort of the operation, use a form hook instead.
+ *
+ * We suspect the pre hook will be useful for developers building more complex
+ * applications and need to perform operations before CiviCRM takes action. This
+ * is very applicable when you need to maintain foreign key constraints etc
+ * (when deleting an object, the child objects have to be deleted first).
+ * Another good use for the pre hook is to see what is changing between the old
+ * and new data.
+ *
+ * @param $op
+ *   Operation being performed with CiviCRM object. Can be one of the following:
+ *   - view: The CiviCRM object is going to be displayed.
+ *   - create: The CiviCRM object is created (or contacts are being added to a group).
+ *   - edit: The CiviCRM object is edited.
+ *   - delete: The CiviCRM object is being deleted (or contacts are being removed from a group).
+ * @param $objectName
+ *   Can have the following values:
+ *   - Individual
+ *   - Household
+ *   - Organization
+ *   - Group
+ *   - GroupContact
+ *   - Relationship
+ *   - Contribution
+ *   - Profile: While this is not really an object, people have expressed an
+ *     interest to perform an action when a profile is created/edited.
+ *   - Membership
+ *   - Event
+ *   - Participant
+ *   - UFMatch: When an object is linked to a CMS user record, at the request of
+ *     GordonH. A UFMatch object is passed for both the pre and post hooks.
+ * @param $id
+ *   The unique identifier for the object if available.
+ * @param &$params
+ *   The parameters passed.
+ *
+ * @see http://wiki.civicrm.org/confluence/display/CRMDOC33/CiviCRM+hook+specification#CiviCRMhookspecification-hookcivicrmpre
+ */
+
+function callhooks_civicrm_pre($op, $objectName, $objectId, &$objectRef)
+{ // watchdog('callhooks',"callhooks_civicrm_pre_${op}_${objectName}(\$objectId, &\$objectRef)<pre>\n\$objectId=$objectId\n\$objectRef=" . var_export($objectRef,1) . '</pre>');
+  if (function_exists("callhooks_civicrm_pre_${op}_$objectName"))
+    { $tz = date_default_timezone_get();
+      date_default_timezone_set('UTC');
+      call_user_func("callhooks_civicrm_pre_${op}_$objectName", $objectId, $objectRef);
+      date_default_timezone_set($tz);
+    }
+}
+
+/**
+ * This hook is called after a db write on some core objects.
+ *
+ * The pre and post hooks are useful for developers building more complex
+ * applications and need to perform operations before CiviCRM takes action. This
+ * is very applicable when you need to maintain foreign key constraints etc.
+ * (when deleting an object, the child objects have to be deleted first).
+ *
+ * @param $op
+ *   The operation being performed with CiviCRM object.
+ *   Can have one one of the following values:
+ *   - view: The CiviCRM object is going to be displayed.
+ *   - create: The CiviCRM object is created (or contacts are being added to a group).
+ *   - edit: The CiviCRM object is edited.
+ *   - delete: The CiviCRM object is being deleted (or contacts are being removed from a group).
+ * @param $objectName
+ *   Can have one of the following values:
+ *   - Individual
+ *   - Household
+ *   - Organization
+ *   - Group
+ *   - GroupContact
+ *   - Relationship
+ *   - Activity
+ *   - Contribution
+ *   - Profile: While this is not really an object, people have expressed an
+ *     interest to perform an action when a profile is created/edited.
+ *   - Membership
+ *   - Participant
+ *   - UFMatch: When an object is linked to a CMS user record, at the request of
+ *     GordonH. A UFMatch object is passed for both the pre and post hooks.
+ *   - Event
+ *   - EntityTag
+ *   - Tag
+ * @param $objectId
+ *   The unique identifier for the object, i.e., the tagID in case of EntityTag.
+ * @param $objectRef
+ *   The reference to the object if available. For case of EntityTag it is an
+ *   array of (entityTable, entityIDs)
+ *
+ * @see http://wiki.civicrm.org/confluence/display/CRMDOC33/CiviCRM+hook+specification#CiviCRMhookspecification-hookcivicrmpost
+ */
+
+function callhooks_civicrm_post($op, $objectName, $objectId, &$objectRef)
+{ // watchdog('callhooks',"callhooks_civicrm_post_${op}_${objectName}(\$objectId, &\$objectRef)<pre>\n\$objectId=$objectId\n\$objectRef=" . var_export($objectRef,1) . '</pre>');
+  if (function_exists("callhooks_civicrm_post_${op}_$objectName"))
+    { $tz = date_default_timezone_get();
+      date_default_timezone_set('UTC');
+      call_user_func("callhooks_civicrm_post_${op}_$objectName", $objectId, $objectRef);
+      date_default_timezone_set($tz);
+    }
+}
+
+/*
+ * These hooks are used to inject UI into CiviCRM pages such as the
+ * Contact Summary page.
+ *
+ * Remember to use the string and url processing functions of your host framework.
+ * For Drupal, these are t() and url().
+ *
+ * @param $op
+ *   E.g., 'view.contact.activity' or 'view.contact.userDashBoard'
+ * @param $objectName
+ *   E.g., 'Contact'
+ * @param $objectId
+ *   The CiviCRM internal ID of the object (a contact ID.).
+ * @param $links
+ *   (optional) The links array to modify in-place.
+ *
+ * @return
+ *   An array of arrays, each element a tuple consisting of url, title
+ *   (and depending on the operation, some other parameters).
+ *
+ * @see http://wiki.civicrm.org/confluence/display/CRMDOC33/CiviCRM+hook+specification#CiviCRMhookspecification-hookcivicrmlinks
+ */
+
+function callhooks_civicrm_links( $op, $objectName, $objectId)
+{ // Cannot have periods (.) in function names.
+  $op = str_replace('.','_',$op);
+  // watchdog('callhooks',"callhooks_civicrm_links_${op}_${objectName}(\$objectId)<br />\$objectId=$objectId");
+  if (function_exists("callhooks_civicrm_links_${op}_$objectName"))
+    { $tz = date_default_timezone_get();
+      date_default_timezone_set('UTC');
+      $links = call_user_func("callhooks_civicrm_links_${op}_$objectName", $objectId);
+      date_default_timezone_set($tz);
+      return $links;
+    }
+  return array();
+}
+
+/**
+ * Validation of forms
+ *
+ * @param $formName
+ *   Name of the form being validated, you will typically switch off this value.
+ * @param $fields
+ *   Array of name value pairs for all 'POST'ed form values.
+ * @param $files
+ *   Array of file properties as sent by PHP POST protocol.
+ * @param $form
+ *   Reference to the civicrm form object. This is useful if you want to
+ *   retrieve any values that we've constructed in the form
+ *
+ * @return
+ *   TRUE if the form validates successfully, otherwise an array containing the
+ *   error message strings.
+ *
+ * @see http://wiki.civicrm.org/confluence/display/CRMDOC33/CiviCRM+hook+specification#CiviCRMhookspecification-hookcivicrmvalidate
+ */
+
+function callhooks_civicrm_validate( $formName, &$fields, &$files, &$form)
+{ // watchdog('callhooks',"callhooks_civicrm_validate_${formName}(&\$fields, &\$files, &\$form)<pre>\n\$fields=" . var_export($fields,1) . "\n\$files=" . var_export($fields,1) . "\n\$form=" . var_export($form,1) . '</pre>');
+  if (function_exists("callhooks_civicrm_validate_$formName"))
+    { $tz = date_default_timezone_get();
+      date_default_timezone_set('UTC');
+      $valid = call_user_func("callhooks_civicrm_validate_$formName", $fields, $files, $form);
+      date_default_timezone_set($tz);
+      return $valid;
+    }
+}
+
+/**
+ * This hook is invoked when building a CiviCRM form. This hook should also be
+ * used to set the default values of a form element.
+ *
+ * @param string $formName
+ *   The name of the form.
+ * @param object $form
+ *    Teference to the form object.
+ *
+ * @see http://wiki.civicrm.org/confluence/display/CRMDOC33/CiviCRM+hook+specification#CiviCRMhookspecification-hookcivicrmbuildForm
+ */
+
+function callhooks_civicrm_buildForm($formName, &$form)
+{ // watchdog('callhooks',"callhooks_civicrm_buildForm_${formName}(&\$form)<pre>\n\$form=" . var_export($form,1) . '</pre>');
+  if (function_exists("callhooks_civicrm_buildForm_$formName"))
+    { $tz = date_default_timezone_get();
+      date_default_timezone_set('UTC');
+      call_user_func("callhooks_civicrm_buildForm_$formName", $form);
+      date_default_timezone_set($tz);
+    }
+}
+
+/**
+ * This hook is invoked when a CiviCRM form is submitted. If the module has
+ * injected any form elements, this hook should save the values in the database.
+ *
+ * @param string $formName
+ *   The name of the form.
+ * @param object $form
+ *   A reference to the form object.
+ *
+ * @see http://wiki.civicrm.org/confluence/display/CRMDOC33/CiviCRM+hook+specification#CiviCRMhookspecification-hookcivicrmpostProcess
+ */
+
+function callhooks_civicrm_postProcess($formName, &$form)
+{ // watchdog('callhooks',"callhooks_civicrm_postProcess_${formName}(&\$form)<pre>\n\$form=" . var_export($form,1) . '</pre>');
+  if (function_exists("callhooks_civicrm_postProcess_$formName"))
+    { $tz = date_default_timezone_get();
+      date_default_timezone_set('UTC');
+      call_user_func("callhooks_civicrm_postProcess_$formName", $form);
+      date_default_timezone_set($tz);
+    }
+}
+
+/**
+ * This hook is called AFTER the db write on a custom table.
+ *
+ * @param string $op
+ *   The type of operation being performed.
+ * @param string $groupID
+ *   The custom group ID.
+ * @param object $entityID
+ *   The entityID of the row in the custom table.
+ * @param array $params
+ *   The parameters that were sent into the calling function.
+ *
+ * @see http://wiki.civicrm.org/confluence/display/CRMDOC33/CiviCRM+hook+specification#CiviCRMhookspecification-hookcivicrmcustom
+ */
+
+function callhooks_civicrm_custom($op, $groupID, $entityID, &$params)
+{ // watchdog('callhooks',"callhooks_civicrm_custom_${op}_${groupID}(\$entityID, &\$params)<pre>\n\$entityID=$entityID\n\$params=" . var_export($params,1) . '</pre>');
+  if (function_exists("callhooks_civicrm_custom_${op}_$groupID"))
+    { $tz = date_default_timezone_get();
+      date_default_timezone_set('UTC');
+      call_user_func("callhooks_civicrm_custom_${op}_$groupID", $entityID, $params);
+      date_default_timezone_set($tz);
+    }
+}
+
+/**
+ * This hook is called when composing the ACL where clause to restrict
+ * visibility of contacts to the logged in user.
+ *
+ * This function will not be called at all if the logged in user has access to
+ * the "edit all contacts" permission.
+ *
+ * @param $type
+ *   The type of permission needed.
+ * @param array $tables
+ *   The tables that are needed for the select clause.
+ * @param array $whereTables
+ *   The tables that are needed for the where clause.
+ * @param int $contactID
+ *   The contactID for whom the check is made.
+ * @param string $where
+ *   The currrent where clause.
+ *
+ * @see http://wiki.civicrm.org/confluence/display/CRMDOC33/CiviCRM+hook+specification#CiviCRMhookspecification-hookcivicrmaclWhereClause
+ */
+
+function callhooks_civicrm_aclWhereClause($type, &$tables, &$whereTables, &$contactID, &$where)
+{ // watchdog('callhooks',"callhooks_civicrm_aclWhereClause_${type}(&\$tables, &\$whereTables, &\$contactID, &\$where)<pre>\n\$tables=" . var_export($tables,1) . "\n\$whereTables=" . var_export($whereTables,1) . "\n\$contactId=$contactId\n\$where=$where</pre>");
+  if (function_exists("callhooks_civicrm_aclWhereClause_$type"))
+    { $tz = date_default_timezone_get();
+      date_default_timezone_set('UTC');
+      call_user_func("callhooks_civicrm_aclWhereClause_$type", $tables, $whereTables, $contactID, $where);
+      date_default_timezone_set($tz);
+    }
+}
+
+/**
+ * This hook is called when composing the ACL to restrict access to civicrm
+ * entities (civicrm groups, profiles and events). NOTE: In order to use this
+ * hook you must uncheck "View All Contacts" AND "Edit All Contacts" in Drupal
+ * Permissions for the user role you want to limit. You can then go into CiviCRM
+ * and grant permission to Edit or View "All Contacts" or "Certain Groups". See
+ * the Forum Topic at: http://forum.civicrm.org/index.php/topic,14595.0.html for
+ * more information.
+ *
+ * @param $type
+ *   The type of permission needed.
+ * @param $contactID
+ *   The contactID for whom the check is made.
+ * @param $tableName
+ *   The tableName which is being permissioned.
+ * @param $allGroups
+ *   The set of all the objects for the above table.
+ * @param $currentGroups
+ *   The set of objects that are currently permissioned for this contact.
+ *   This array will be modified by the hook.
+ *
+ * @see http://wiki.civicrm.org/confluence/display/CRMDOC33/CiviCRM+hook+specification#CiviCRMhookspecification-hookcivicrmaclGroup
+ */
+
+function callhooks_civicrm_aclGroup($type, $contactID, $tableName, &$allGroups, &$currentGroups)
+{ // watchdog('callhooks',"callhooks_civicrm_aclGroup_${type}_${tableName}(&\$contactID, &\$allGroups, &\$currentGroups))<pre>\n\$contactID=$contactID\n\$allGroups=" . var_export($allGroups,1) . "\n\$currentGroups=" . var_export($currentGroups,1) . '</pre>');
+  if (function_exists("callhooks_civicrm_aclGroup_${type}_$tableName"))
+    { $tz = date_default_timezone_get();
+      date_default_timezone_set('UTC');
+      call_user_func("callhooks_civicrm_aclGroup_${type}_$tableName", $contactID, $allGroups, $currentGroups);
+      date_default_timezone_set($tz);
+    }
+}
+
+/**
+ * This hook is called when rendering the dashboard page. This hook can be used
+ * to add content to the dashboard page.
+ *
+ * @param $contactID
+ *   The contactID for whom the dashboard is being generated.
+ * @param $contentPlacement
+ *   Where should the hook content be displayed relative to the activity list.
+ *   This output parameter should be set to one of the following:
+ *   - CRM_Utils_Hook::DASHBOARD_BELOW
+ *   - CRM_Utils_Hook::DASHBOARD_ABOVE
+ *   - CRM_Utils_Hook::DASHBOARD_REPLACE
+ *   The default is to add content BELOW the standard dashboard Activities
+ *   listing. DASHBOARD_REPLACE replaces the standard Activities listing with
+ *   the provided content.
+ *   
+ * @return
+ *   The HTML to include in the dashboard.
+ *
+ * @see http://wiki.civicrm.org/confluence/display/CRMDOC33/CiviCRM+hook+specification#CiviCRMhookspecification-hookcivicrmdashboard
+ */
+
+/* Uncomment this function to modify the dashboard content.
+function callhooks_civicrm_dashboard($contactID, &$contentPlacement)
+{
+  // watchdog('callhooks', "callhooks_civicrm_dashboard(\$contactID, &\$contentPlacement)");
+  $output = '';
+  return $output;
+}
+*/
+
+/**
+ * This hook is called when building CiviCRM's menu structure. You will need to
+ * visit <your_site>/civicrm/menu/rebuild&reset=1 to pick up your additions.
+ *
+ * @param $files
+ *   The array for files used to build the menu. You can append or delete
+ *   entries from this list. You can also override menu items defined by
+ *   CiviCRM Core.
+ *
+ * @see http://wiki.civicrm.org/confluence/display/CRMDOC33/CiviCRM+hook+specification#CiviCRMhookspecification-hookcivicrmxmlMenu
+ */
+
+/* Uncomment this function to midfy the CiviCRM menu.
+function callhooks_civicrm_xmlMenu(&$files)
+{
+}
+*/
+
+/**
+ * This hook is called during the processing of a contribution after the payment
+ * processor has control, but just before the CiviCRM processor specific code
+ * starts a transaction with the back-end payments server (e.g., PayPal,
+ * Authorized.net, or Moneris). It allows you to modify the parameters passed to
+ * the back end so that you can pass custom parameters, or use features of your
+ * back-end that CiviCRM does not "know" about.
+ *
+ * @param $paymentObj
+ *   An instance of the payment class of the payment processor invoked.
+ * @param $rawParams
+ *   The associative array passed by CiviCRM to the processor.
+ * @param $cookedParams
+ *   The associative array of parameters as translated into the processor's API.
+ *
+ * @see http://wiki.civicrm.org/confluence/display/CRMDOC33/CiviCRM+hook+specification#CiviCRMhookspecification-hookcivicrmalterPaymentProcessorParams
+ */
+
+function callhooks_civicrm_alterPaymentProcessorParams($paymentObj,&$rawParams, &$cookedParams)
+{ $className = get_class($paymentObj);
+  // watchdog('callhooks',"callhooks_civicrm_alterPaymentProcessorParams_${className}(\$paymentObj,&\$rawParams, &\$cookedParams)<pre>\n\$paymentObj=" . var_export($paymentObj,1) . "\n\$rawParams=" . var_export($rawParams,1) . "\n\$cookedParams=" . var_export($cookedParams,1));
+  if (function_exists("callhooks_civicrm_alterPaymentProcessorParams_$className"))
+    { $tz = date_default_timezone_get();
+      date_default_timezone_set('UTC');
+      call_user_func("callhooks_civicrm_alterPaymentProcessorParams_$className", $paymentObj, $rawParams, $cookedParams);
+      date_default_timezone_set($tz);
+    }
+}
+
+/**
+ * This hook is called before a CiviCRM page is rendered.
+ *
+ * @param $page
+ *   The page being rendered.
+ *
+ * @see http://wiki.civicrm.org/confluence/display/CRMDOC33/CiviCRM+hook+specification#CiviCRMhookspecification-hookcivicrmpageRun
+ */
+
+function callhooks_civicrm_pageRun(&$page)
+{ $name = $page->getVar('_name');
+  // watchdog('callhooks',"callhooks_civicrm_page_${name}(\$page)<pre>\n\$page=" . var_export($page,1) . '</pre>');
+  if (function_exists("callhooks_civicrm_page_$name"))
+    { $tz = date_default_timezone_get();
+      date_default_timezone_set('UTC');
+      call_user_func("callhooks_civicrm_page_$name", $page);
+      date_default_timezone_set($tz);
+    }
+}
+
+/**
+ * This hook is called after a CiviCRM object (Event, ContributionPage, Profile)
+ * has been copied.
+ *
+ * @param $objectName
+ *   The name of the object that is being copied.
+ * @param $object
+ *    A reference to the copied object.
+ *
+ * @see http://wiki.civicrm.org/confluence/display/CRMDOC33/CiviCRM+hook+specification#CiviCRMhookspecification-hookcivicrmcopy
+ */
+
+function callhooks_civicrm_copy($objectName, &$object)
+{ // watchdog('callhooks',"callhooks_civicrm_copy_${objectName}(\$object)<pre>\n\$object=" . var_export($object,1) . '</pre>');
+  if (function_exists("callhooks_civicrm_copy_$objectName"))
+    { $tz = date_default_timezone_get();
+      date_default_timezone_set('UTC');
+      call_user_func("callhooks_civicrm_copy_$objectName", $object);
+      date_default_timezone_set($tz);
+    }
+}
+
+/**
+ * This hook is called to get all the tokens that can be used.
+ *
+ * @param $tokens
+ *    A reference to the associative array of tokens that are available to be
+ *    used in mailings and other contexts.
+ *
+ * @see http://wiki.civicrm.org/confluence/display/CRMDOC33/CiviCRM+hook+specification#CiviCRMhookspecification-hookcivicrmtokens
+ */
+
+/* Uncomment this function to insert your own custom token descriptions.
+function callhooks_civicrm_tokens(&$tokens)
+{ // watchdog('callhooks',"callhooks_civicrm_tokens(\$tokens)<pre>\n\$tokens=" . var_export($tokens,1) . '</pre>');
+}
+*/
+
+/**
+ * This hook is called to get all the values for the tokens registered.
+ *
+ * @param $details
+ *   Array of contactID details.
+ * @param $contactIDs
+ *    Either a single contactID or an array of contactIDs that the system needs
+ *    values for.
+ *
+ * @see http://wiki.civicrm.org/confluence/display/CRMDOC33/CiviCRM+hook+specification#CiviCRMhookspecification-hookcivicrmtokenValues
+ */
+
+/* Uncomment this function to insert your own custom token values.
+function callhooks_civicrm_tokenValues(&$details, &$contactIDs)
+{ // watchdog('callhooks',"callhooks_civicrm_tokenValues(\$details, \$contactIDs)<pre>\n\$details=" . var_export($details,1) . "\n\$contactIDs=" . var_export($contactIDs,1) . '</pre>');
+}
+*/
+
+/**
+ * This hook is called when CiviCRM needs to edit/display a custom field with
+ * options (select, radio, checkbox, adv multiselect)
+ *
+ * @param $fieldID
+ *   The custom field ID.
+ * @param $options
+ *   The current set of options for that custom field. You can add/remove
+ *   existing options. Important: This array may contain meta-data about the
+ *   field that is needed elsewhere, so it is important to be careful to not
+ *   overwrite the array. Only add/edit/remove the specific field options you
+ *   intend to affect.
+ * @param $detailedFormat
+ *    If TRUE, the options are in an associative array keyed by ID, as follows:
+ *    ID => array ( 'id' => ID, 'label' => label, 'value' => value )
+ *
+ * @see http://wiki.civicrm.org/confluence/display/CRMDOC33/CiviCRM+hook+specification#CiviCRMhookspecification-hookcivicrmcustomFieldOptions
+ */
+
+function callhooks_civicrm_customFieldOptions($fieldID, &$options, $detailedFormat = false)
+{ // watchdog('callhooks',"callhooks_civicrm_customFieldOptions_${fieldID}(\$options, \$detailedFormat)<pre>\n\$options=" . var_export($options,1) . "\n\$detailedFormat=$detailedFormat</pre>");
+  if (function_exists("callhooks_civicrm_customFieldOptions_$fieldID"))
+    {
+      $tz = date_default_timezone_get();
+      date_default_timezone_set('UTC');
+      call_user_func("callhooks_civicrm_customFieldOptions_$fieldID", $options, $detailedFormat);
+      date_default_timezone_set($tz);
+    }
+}
+
+/**
+ * @todo
+ * - hook_civicrm_searchTasks
+ * - hook_civicrm_buildAmount
+ * - hook_civicrm_tabs
+ * - hook_civicrm_mailingGroups
+ * - hook_civicrm_shortcuts
+ * - hook_civicrm_summary
+ * - hook_civicrm_contactListQuery
+ * - hook_civicrm_membershipTypeValues
+ * - hook_civicrm_alterMailParams
+ * - hook_civicrm_caseSummary
+ * - hook_civicrm_config
+ * - hook_civicrm_navigationMenu
+ * - hook_civicrm_merge
+ * - hook_civicrm_export
+ * - hook_civicrm_emailProcessor
+ */

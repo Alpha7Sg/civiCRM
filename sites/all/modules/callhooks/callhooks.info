@@ -1,0 +1,5 @@
+name = Call (CiviCRM) hooks
+description = Just a place to implement custom hooks
+core = 6.x
+dependencies[] = civicrm
+dependencies[] = date_api
