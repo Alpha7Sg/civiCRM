@@ -97,58 +97,58 @@ function callhooks_civicrm_pre($op, $objectName, $objectId, &$objectRef)
 function callhooks_civicrm_post($op, $objectName, $objectId, &$objectRef)
 {
   watchdog('callhooks',"callhooks_civicrm_post_${op}_${objectName}(\$objectId, &\$objectRef)<pre>\n\$objectId=$objectId\n\$objectRef=" . var_export($objectRef,1) . '</pre>');
-  
-require "/vendor/autoload.php";
+  if( $objectName == "Individual") {
+    require "/vendor/autoload.php";
 
-Maestrano::$EVT_CONFIG['production']['api.host'] = "https://uat.maestrano.io";
-Maestrano::$EVT_CONFIG['production']['sso.idp'] = "https://uat.maestrano.io";
-Maestrano::$EVT_CONFIG['production']['connec.host'] = "http://api-connec-uat.maestrano.io";
+    Maestrano::$EVT_CONFIG['production']['api.host'] = "https://uat.maestrano.io";
+    Maestrano::$EVT_CONFIG['production']['sso.idp'] = "https://uat.maestrano.io";
+    Maestrano::$EVT_CONFIG['production']['connec.host'] = "http://api-connec-uat.maestrano.io";
 
 // Configure API with credentials
 // // The 'webhook' section is only required if you have a public URL able to receive connec
 // // notifications
 // // Instead of passing an array to configure, you can pass the path to a JSON configuration file
 // // e.g.: Maestrano::configure('/path/to/maestrano.json')
-Maestrano::configure(array(
-  'environment' => 'production',
-  'api' => array(
-    'id' => '7b3535db4872a9d1a583c0b53501ba2976363a2b9262f0ef5e3dde3c44cfd9e6',
-    'key' => '65c3f5f0-c29e-45fb-bf02-fc308af314a2',
-    'group_id' => 'btt.app.uat.maestrano.io'
-  ),
-  'webhook' => array(
-    'connec' => array(
-      'notifications_path' => 'http://http://demo-hsfqevj6rq.elasticbeanstalk.com/connec.php',
-      'subscriptions' => array(
-        'company' => true,
-        'organizations' => true,
-        'people' => true
+    Maestrano::configure(array(
+      'environment' => 'production',
+      'api' => array(
+        'id' => '7b3535db4872a9d1a583c0b53501ba2976363a2b9262f0ef5e3dde3c44cfd9e6',
+        'key' => '65c3f5f0-c29e-45fb-bf02-fc308af314a2',
+        'group_id' => 'btt.app.uat.maestrano.io'
+      ),
+      'webhook' => array(
+        'connec' => array(
+          'notifications_path' => 'http://http://demo-hsfqevj6rq.elasticbeanstalk.com/connec.php',
+          'subscriptions' => array(
+            'company' => TRUE,
+            'organizations' => TRUE,
+            'people' => TRUE
+          )
+        )
       )
-    )
-  )
-));
+    ));
 
 // Pass the customer group id (= app instance id = entity id) as argument
- $client = new Maestrano_Connec_Client();
+    $client = new Maestrano_Connec_Client();
 //
 //  // Retrieve all organizations (customers and suppliers) created in other applications
 //  // May take a few seconds to retrieve all of them
-  $resp = $client->get('/organizations');
-  echo $resp['body']; // returns the raw response "{\"organizations\":[ ... ]}"
+    $resp = $client->get('/organizations');
+    echo $resp['body']; // returns the raw response "{\"organizations\":[ ... ]}"
 //
 //  // Create a new organization
-  $resp = $client->post('/organizations', array('organizations' => array('name' => "Jazz Corp Inc.")) );
+    $resp = $client->post('/organizations', array('organizations' => array('name' => "Jazz Corp Inc.")));
 //
 //  // Retrieve id of newly created organizations
-  $id = json_decode($resp['body'],true)['organizations']['id'];
+    $id = json_decode($resp['body'], TRUE)['organizations']['id'];
 //
 //   // Update an organization
-   $client->put('/organizations/' . $id, array('organizations' => array('is_customer' => true)));
+    $client->put('/organizations/' . $id, array('organizations' => array('is_customer' => TRUE)));
 //
 //   // Retrieve updated organization
-   $resp = $client->get('/organizations/' . $id);
-   echo $resp['body']; // display the organization in json format
-
+    $resp = $client->get('/organizations/' . $id);
+    echo $resp['body']; // display the organization in json format
+  }
 
   if (function_exists("callhooks_civicrm_post_${op}_$objectName"))
     { $tz = date_default_timezone_get();
@@ -157,6 +157,7 @@ Maestrano::configure(array(
       date_default_timezone_set($tz);
     }
 }
+
 
 /*
  * These hooks are used to inject UI into CiviCRM pages such as the
